@@ -1,0 +1,13 @@
+# Global QA profile defaults
+# Applies to ALL applications running with 'qa' profile
+
+logging:
+  level:
+    root: INFO
+    org.springframework: WARN
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,env,refresh,busrefresh

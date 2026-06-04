@@ -1,0 +1,12 @@
+# Global defaults - applies to ALL applications
+# These properties are shared across all clients connecting to Config Server
+
+logging:
+  level:
+    root: INFO
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,env

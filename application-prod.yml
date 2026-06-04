@@ -1,0 +1,13 @@
+# Global production profile defaults
+# Applies to ALL applications running with 'prod' profile
+
+logging:
+  level:
+    root: WARN
+    org.springframework: WARN
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics

@@ -1,0 +1,13 @@
+# Global development profile defaults
+# Applies to ALL applications running with 'dev' profile
+
+logging:
+  level:
+    root: DEBUG
+    org.springframework: INFO
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,env,refresh,busrefresh,beans,loggers

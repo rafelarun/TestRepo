@@ -1,0 +1,7 @@
+# sample-client QA profile
+
+message: Hello from Config Server - QA Environment - Version 1
+
+app:
+  description: Sample Client Application (QA)
+  debug-mode: false

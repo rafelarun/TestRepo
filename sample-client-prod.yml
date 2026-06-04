@@ -1,0 +1,10 @@
+# sample-client production profile
+
+message: Hello from Config Server - PRODUCTION - Version 1
+
+# Example encrypted property (encrypt using: POST /encrypt on Config Server)
+# db.password: '{cipher}AQA...<encrypted-value>'
+
+app:
+  description: Sample Client Application (Production)
+  debug-mode: false
