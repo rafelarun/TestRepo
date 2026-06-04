@@ -1,0 +1,80 @@
+server:
+  port: 8081
+  shutdown: graceful
+
+spring:
+  application:
+    name: sample-client
+  lifecycle:
+    timeout-per-shutdown-phase: 30s
+  config:
+    import: "configserver:${CONFIG_SERVER_URI:https://localhost:8888}"
+  cloud:
+    config:
+      username: ${CONFIG_SERVER_USERNAME:admin}
+      password: ${CONFIG_SERVER_PASSWORD:admin123}
+      fail-fast: false
+      retry:
+        max-attempts: 3
+        initial-interval: 1000
+        multiplier: 2.0
+        max-interval: 4000
+    bus:
+      enabled: true
+      destination: springCloudBus
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+    consumer:
+      group-id: sample-client
+      auto-offset-reset: earliest
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.apache.kafka.common.serialization.StringSerializer
+
+# Default message (overridden by Config Server)
+message: Default Message - Config Server not available
+
+# Actuator
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,env,busrefresh,refresh,beans,loggers
+  endpoint:
+    health:
+      show-details: always
+      show-components: always
+  tracing:
+    sampling:
+      probability: 1.0
+  zipkin:
+    tracing:
+      endpoint: ${ZIPKIN_ENDPOINT:http://localhost:9411/api/v2/spans}
+  metrics:
+    tags:
+      application: sample-client
+
+# Resilience4j
+resilience4j:
+  circuitbreaker:
+    instances:
+      kafkaConsumer:
+        sliding-window-type: COUNT_BASED
+        sliding-window-size: 10
+        failure-rate-threshold: 50
+        minimum-number-of-calls: 5
+        wait-duration-in-open-state: 30s
+        permitted-number-of-calls-in-half-open-state: 3
+        automatic-transition-from-open-to-half-open-enabled: true
+
+# Logging
+logging:
+  config: classpath:log4j2-spring.xml
+  level:
+    root: INFO
+    com.enterprise.sampleclient: INFO
+    org.springframework.cloud.config: INFO
+    org.springframework.cloud.bus: INFO
+    org.apache.kafka: WARN

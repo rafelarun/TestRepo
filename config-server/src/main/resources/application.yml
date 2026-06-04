@@ -1,0 +1,130 @@
+server:
+  port: 8888
+  shutdown: graceful
+  ssl:
+    enabled: false
+    # Enable for production:
+    # enabled: true
+    # key-store: classpath:keystore.p12
+    # key-store-password: ${KEYSTORE_PASSWORD:changeit}
+    # key-store-type: PKCS12
+    # protocol: TLS
+    # enabled-protocols: TLSv1.2,TLSv1.3
+  tomcat:
+    threads:
+      min-spare: 50
+      max: 400
+    accept-count: 100
+    connection-timeout: 20000
+
+spring:
+  application:
+    name: config-server
+  lifecycle:
+    timeout-per-shutdown-phase: 60s
+  cloud:
+    config:
+      server:
+        git:
+          uri: ${GIT_URI:https://github.com/rafelarun/TestRepo.git}
+          default-label: master
+          clone-on-start: true
+          force-pull: true
+          timeout: 10
+        monitor:
+          github:
+            enabled: true
+    bus:
+      enabled: true
+      destination: springCloudBus
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.apache.kafka.common.serialization.StringSerializer
+      acks: all
+      retries: 3
+    consumer:
+      group-id: config-server
+      auto-offset-reset: earliest
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+
+# Encryption
+encrypt:
+  key: ${ENCRYPT_KEY:my-secret-encryption-key}
+
+# Security
+app:
+  security:
+    admin:
+      username: ${CONFIG_SERVER_ADMIN_USERNAME:admin}
+      password: ${CONFIG_SERVER_ADMIN_PASSWORD:admin123}
+  webhook:
+    secret: ${WEBHOOK_SECRET:my-webhook-secret}
+
+# Actuator
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,env,busrefresh,refresh,beans,loggers
+  endpoint:
+    health:
+      show-details: always
+      show-components: always
+  tracing:
+    sampling:
+      probability: 1.0
+  zipkin:
+    tracing:
+      endpoint: ${ZIPKIN_ENDPOINT:http://localhost:9411/api/v2/spans}
+  metrics:
+    tags:
+      application: config-server
+
+# Resilience4j
+resilience4j:
+  circuitbreaker:
+    instances:
+      kafkaProducer:
+        sliding-window-type: COUNT_BASED
+        sliding-window-size: 10
+        failure-rate-threshold: 50
+        minimum-number-of-calls: 5
+        wait-duration-in-open-state: 30s
+        permitted-number-of-calls-in-half-open-state: 3
+        automatic-transition-from-open-to-half-open-enabled: true
+  retry:
+    instances:
+      gitRepository:
+        max-attempts: 3
+        wait-duration: 1s
+        exponential-backoff-multiplier: 2.0
+        retry-exceptions:
+          - org.eclipse.jgit.api.errors.TransportException
+          - org.eclipse.jgit.api.errors.GitAPIException
+  ratelimiter:
+    instances:
+      encryptEndpoint:
+        limit-for-period: 10
+        limit-refresh-period: 1s
+        timeout-duration: 0s
+      decryptEndpoint:
+        limit-for-period: 10
+        limit-refresh-period: 1s
+        timeout-duration: 0s
+      monitorEndpoint:
+        limit-for-period: 5
+        limit-refresh-period: 1s
+        timeout-duration: 0s
+
+# Logging
+logging:
+  config: classpath:log4j2-spring.xml
+  level:
+    root: INFO
+    com.enterprise.configserver: INFO
+    org.springframework.cloud.config: INFO
+    org.springframework.cloud.bus: INFO
+    org.apache.kafka: WARN
